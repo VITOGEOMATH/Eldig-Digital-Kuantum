@@ -4,6 +4,27 @@
 [![Platform](https://img.shields.io/badge/Platform-ESP32%20%7C%20FPGA-blue)](https://www.espressif.com/)
 [![Language](https://img.shields.io/badge/Language-Verilog%20%7C%20C%23-green)](https://dotnet.microsoft.com/)
 [![Status](https://img.shields.io/badge/Status-Research%20Prototype-orange)]()
+👥 Tim Penyusun
+Disusun Oleh:
+
+Muhammad Rif’al Faiz Arivito (2042231067)
+
+Program Studi:
+
+D4 Teknologi Rekayasa Instrumentasi
+
+Departemen Teknik Instrumentasi
+
+Fakultas Vokasi
+
+Institut Teknologi Sepuluh Nopember (ITS)
+
+Dosen Pengampu:
+
+Dwi Oktavianto Wahyu Nugroho, S.T., M.T.
+
+📄 Lisensi
+Proyek ini dilisensikan di bawah lisensi MIT - lihat file LICENSE untuk detailnya.
 
 > **Integrasi Sensor Lingkungan Presisi dan Logika Kendali Diskrit pada Sistem Ventilasi Otonom Greenhouse Cerdas.**
 
@@ -158,24 +179,4 @@ public static void Main() {
     }
 }
 
-👥 Tim Penyusun
-Disusun Oleh:
 
-Muhammad Rif’al Faiz Arivito (2042231067)
-
-Program Studi:
-
-D4 Teknologi Rekayasa Instrumentasi
-
-Departemen Teknik Instrumentasi
-
-Fakultas Vokasi
-
-Institut Teknologi Sepuluh Nopember (ITS)
-
-Dosen Pengampu:
-
-Dwi Oktavianto Wahyu Nugroho, S.T., M.T.
-
-📄 Lisensi
-Proyek ini dilisensikan di bawah lisensi MIT - lihat file LICENSE untuk detailnya.
