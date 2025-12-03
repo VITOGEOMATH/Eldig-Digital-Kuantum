@@ -1,0 +1,78 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+entity DigitalQuantumMapping is
+    Port ( 
+        clk         : in  STD_LOGIC; -- System Clock
+        rst         : in  STD_LOGIC; -- Global Reset
+        
+        -- INPUT SENSOR (Sinyal Terkuantisasi 1-Bit)
+        A_Temp      : in  STD_LOGIC; -- 1 = Panas
+        B_Vib       : in  STD_LOGIC; -- 1 = Badai/Getaran
+        C_Soil      : in  STD_LOGIC; -- 1 = Kering
+        D_UV        : in  STD_LOGIC; -- 1 = Mendung
+        E_Nutri     : in  STD_LOGIC; -- 1 = Defisiensi
+        F_Heart     : in  STD_LOGIC; -- 1 = Bahaya K3
+        
+        -- OUTPUT AKTUATOR (Sinyal Logika Diskrit)
+        Step_Mode   : out STD_LOGIC_VECTOR (1 downto 0); -- 00:Hold, 01:CW, 10:CCW
+        Relay_Pump  : out STD_LOGIC; -- 1 = ON
+        LED_Grow    : out STD_LOGIC; -- 1 = ON
+        Motor_Dose  : out STD_LOGIC; -- 1 = Run
+        Buzzer_Alert: out STD_LOGIC; -- 1 = Beep
+        Servo_Track : out STD_LOGIC  -- 1 = Tracking
+    );
+end DigitalQuantumMapping;
+
+architecture Behavioral of DigitalQuantumMapping is
+begin
+
+    -- LOGIC SOLVE SUBSYSTEM 1: VENTILASI (FSM / Priority Logic)
+    process(clk, rst)
+    begin
+        if rst = '1' then
+            Step_Mode <= "00"; -- Reset ke IDLE
+        elsif rising_edge(clk) then
+            -- Priority Logic
+            if B_Vib = '1' then
+                Step_Mode <= "10"; -- LOCKDOWN (Safety Override / CCW)
+            elsif A_Temp = '1' then
+                Step_Mode <= "01"; -- VENTING (Open / CW)
+            else
+                Step_Mode <= "00"; -- HOLD (Suhu Normal)
+            end if;
+        end if;
+    end process;
+
+    -- LOGIC SOLVE SUBSYSTEM 2: PERTUMBUHAN (Direct Mapping)
+    process(clk)
+    begin
+        if rising_edge(clk) then
+            -- Relay aktif jika Tanah Kering (C=1)
+            Relay_Pump <= C_Soil;
+            
+            -- LED aktif jika Mendung (D=1)
+            LED_Grow   <= D_UV;
+        end if;
+    end process;
+
+    -- LOGIC SOLVE SUBSYSTEM 3: KEAMANAN & NUTRISI (Interlock)
+    process(clk)
+    begin
+        if rising_edge(clk) then
+            if F_Heart = '1' then
+                -- KONDISI DARURAT (Pekerja Pingsan / Bahaya)
+                Buzzer_Alert <= '1'; -- Alarm Nyala
+                Servo_Track  <= '1'; -- Kamera Melacak
+                Motor_Dose   <= '0'; -- Matikan Mesin Nutrisi (Safety Cut-off)
+            else
+                -- KONDISI AMAN
+                Buzzer_Alert <= '0';
+                Servo_Track  <= '0';
+                -- Nutrisi jalan HANYA jika butuh (E=1) DAN Aman (F=0)
+                Motor_Dose   <= E_Nutri;
+            end if;
+        end if;
+    end process;
+
+end Behavioral;

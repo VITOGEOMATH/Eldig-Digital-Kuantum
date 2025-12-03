@@ -1,0 +1,108 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+entity tb_DigitalQuantumMapping is
+-- Entity testbench kosong
+end tb_DigitalQuantumMapping;
+
+architecture Behavioral of tb_DigitalQuantumMapping is
+
+    -- Deklarasi Komponen (Unit Under Test)
+    component DigitalQuantumMapping
+    Port ( 
+        clk, rst : in STD_LOGIC;
+        A_Temp, B_Vib, C_Soil, D_UV, E_Nutri, F_Heart : in STD_LOGIC;
+        Step_Mode : out STD_LOGIC_VECTOR(1 downto 0);
+        Relay_Pump, LED_Grow, Motor_Dose, Buzzer_Alert, Servo_Track : out STD_LOGIC
+    );
+    end component;
+
+    -- Sinyal Internal untuk menghubungkan ke UUT
+    signal clk : STD_LOGIC := '0';
+    signal rst : STD_LOGIC := '0';
+    signal A_Temp, B_Vib, C_Soil, D_UV, E_Nutri, F_Heart : STD_LOGIC := '0';
+    
+    signal Step_Mode : STD_LOGIC_VECTOR(1 downto 0);
+    signal Relay_Pump, LED_Grow, Motor_Dose, Buzzer_Alert, Servo_Track : STD_LOGIC;
+
+    -- Periode Clock
+    constant clk_period : time := 10 ns;
+
+begin
+
+    -- Instansiasi Unit Under Test (UUT)
+    uut: DigitalQuantumMapping port map (
+        clk => clk,
+        rst => rst,
+        A_Temp => A_Temp,
+        B_Vib => B_Vib,
+        C_Soil => C_Soil,
+        D_UV => D_UV,
+        E_Nutri => E_Nutri,
+        F_Heart => F_Heart,
+        Step_Mode => Step_Mode,
+        Relay_Pump => Relay_Pump,
+        LED_Grow => LED_Grow,
+        Motor_Dose => Motor_Dose,
+        Buzzer_Alert => Buzzer_Alert,
+        Servo_Track => Servo_Track
+    );
+
+    -- Proses Pembangkitan Clock
+    clk_process : process
+    begin
+        clk <= '0';
+        wait for clk_period/2;
+        clk <= '1';
+        wait for clk_period/2;
+    end process;
+
+    -- Proses Stimulus (Skenario Pengujian)
+    stim_proc: process
+    begin		
+        -- 1. Reset System
+        rst <= '1';
+        wait for 20 ns;
+        rst <= '0';
+        wait for 20 ns;
+
+        -- 2. KONDISI NORMAL (Semua sensor 0)
+        -- Harapan: Step=00, Pump=0, LED=0, Motor=0, Buzzer=0
+        A_Temp <= '0'; B_Vib <= '0'; C_Soil <= '0'; 
+        D_UV <= '0'; E_Nutri <= '0'; F_Heart <= '0';
+        wait for 20 ns;
+
+        -- 3. UJI VENTILASI (Priority Logic)
+        -- Kasus A: Panas (A=1) -> Harapan: Step=01 (Open)
+        A_Temp <= '1';
+        wait for 20 ns;
+        
+        -- Kasus B: Panas (A=1) TAPI Badai (B=1) -> Harapan: Step=10 (Lockdown menang)
+        B_Vib <= '1';
+        wait for 20 ns;
+        
+        -- Kembali Normal
+        A_Temp <= '0'; B_Vib <= '0';
+        wait for 20 ns;
+
+        -- 4. UJI PERTUMBUHAN (Direct Mapping)
+        -- Kasus: Tanah Kering & Mendung -> Harapan: Pump=1, LED=1
+        C_Soil <= '1'; D_UV <= '1';
+        wait for 20 ns;
+        C_Soil <= '0'; D_UV <= '0'; -- Matikan
+        wait for 20 ns;
+
+        -- 5. UJI SAFETY & NUTRISI (Interlock)
+        -- Kasus A: Butuh Nutrisi (E=1), Aman (F=0) -> Harapan: Motor=1
+        E_Nutri <= '1'; F_Heart <= '0';
+        wait for 20 ns;
+        
+        -- Kasus B: Butuh Nutrisi (E=1), TAPI Bahaya (F=1) -> Harapan: Motor=0 (Cut-off), Buzzer=1
+        F_Heart <= '1';
+        wait for 20 ns;
+
+        -- Selesai
+        wait;
+    end process;
+
+end Behavioral;

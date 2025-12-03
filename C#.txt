@@ -1,0 +1,140 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+
+public class Program
+{
+    // --- KONFIGURASI MOCK (TIRUAN) ---
+    // Karena DotNetFiddle tidak punya GPIO, kita buat Enum tiruan
+    public enum PinMode { Input, Output }
+    public enum PinValue { Low = 0, High = 1 }
+
+    // Kelas MockGpioController untuk menipu program seolah-olah ada hardware
+    public class MockGpioController
+    {
+        private Dictionary<int, PinValue> _pinStates = new Dictionary<int, PinValue>();
+
+        public void OpenPin(int pin, PinMode mode)
+        {
+            Console.WriteLine($"[HARDWARE INIT] Pin {pin} dibuka mode {mode}");
+            if (!_pinStates.ContainsKey(pin)) _pinStates[pin] = PinValue.Low;
+        }
+
+        public PinValue Read(int pin)
+        {
+            // Mengembalikan nilai yang tersimpan di memori simulasi
+            return _pinStates.ContainsKey(pin) ? _pinStates[pin] : PinValue.Low;
+        }
+
+        public void Write(int pin, PinValue value)
+        {
+            _pinStates[pin] = value;
+            // Kita tidak print setiap write pulse agar console tidak penuh spam
+        }
+
+        // Fungsi khusus simulasi untuk mengubah input sensor secara manual
+        public void SetSensorData(int pin, PinValue value)
+        {
+            _pinStates[pin] = value;
+        }
+    }
+
+    // --- KODE ASLI LOGIKA ANDA ---
+    
+    // Definisi Pin GPIO
+    private const int PIN_TEMP_FLAG = 18;  // Input A (Suhu)
+    private const int PIN_VIB_FLAG  = 19;  // Input B (Getaran)
+    private const int PIN_STEP_DIR  = 21;  // Output Stepper Direction
+    private const int PIN_STEP_PUL  = 22;  // Output Stepper Pulse
+
+    public static void Main()
+    {
+        // Gunakan Mock Controller buatan kita
+        MockGpioController gpio = new MockGpioController();
+
+        // Inisialisasi Pin
+        gpio.OpenPin(PIN_TEMP_FLAG, PinMode.Input);
+        gpio.OpenPin(PIN_VIB_FLAG, PinMode.Input);
+        gpio.OpenPin(PIN_STEP_DIR, PinMode.Output);
+        gpio.OpenPin(PIN_STEP_PUL, PinMode.Output);
+        
+        Console.WriteLine("\n--- Digital Quantum Mapping System Simulation Started ---\n");
+
+        // Di DotNetFiddle, kita tidak bisa pakai while(true) selamanya karena akan time out.
+        // Kita simulasikan 3 Skenario (Loop 3 kali)
+        for (int i = 1; i <= 3; i++)
+        {
+            Console.WriteLine($"\n>> ITERASI SIMULASI KE-{i}:");
+
+            // --- SIMULASI PERUBAHAN SENSOR (Otomatisasi Input) ---
+            if (i == 1) 
+            {
+                // Skenario 1: Normal (Semua Low)
+                Console.WriteLine("[SENSOR] Kondisi: Normal");
+                gpio.SetSensorData(PIN_TEMP_FLAG, PinValue.Low);
+                gpio.SetSensorData(PIN_VIB_FLAG, PinValue.Low);
+            }
+            else if (i == 2)
+            {
+                // Skenario 2: Panas (Temp High)
+                Console.WriteLine("[SENSOR] Kondisi: PANAS TERDETEKSI");
+                gpio.SetSensorData(PIN_TEMP_FLAG, PinValue.High);
+                gpio.SetSensorData(PIN_VIB_FLAG, PinValue.Low);
+            }
+            else if (i == 3)
+            {
+                // Skenario 3: Badai/Getaran (Vib High) - Priority Logic Test
+                Console.WriteLine("[SENSOR] Kondisi: GEMPA/BADAI TERDETEKSI (Meskipun Panas)");
+                gpio.SetSensorData(PIN_TEMP_FLAG, PinValue.High); // Meskipun panas
+                gpio.SetSensorData(PIN_VIB_FLAG, PinValue.High);  // Ada gempa
+            }
+
+            // --- 1. AKUISISI DATA ---
+            bool isHot = gpio.Read(PIN_TEMP_FLAG) == PinValue.High;
+            bool isStorm = gpio.Read(PIN_VIB_FLAG) == PinValue.High;
+
+            // --- 2. LOGIC SOLVE ---
+            if (isStorm)
+            {
+                // State: LOCKDOWN -> Gerak CCW
+                Console.WriteLine("LOGIC: Priority Override -> EMERGENCY LOCKDOWN");
+                MoveStepper(gpio, PinValue.Low, 5); // Steps dikurangi agar log terbaca
+            }
+            else if (isHot)
+            {
+                // State: VENTING -> Gerak CW
+                Console.WriteLine("LOGIC: Suhu Tinggi -> OPENING VENT");
+                MoveStepper(gpio, PinValue.High, 5);
+            }
+            else
+            {
+                // State: IDLE
+                Console.WriteLine("LOGIC: Aman -> SYSTEM HOLD");
+            }
+
+            Thread.Sleep(500); // Delay simulasi
+        }
+        
+        Console.WriteLine("\n--- Simulasi Selesai ---");
+    }
+
+    // Fungsi Helper Aktuator
+    private static void MoveStepper(MockGpioController controller, PinValue direction, int steps)
+    {
+        string dirText = (direction == PinValue.High) ? "CW (Buka)" : "CCW (Tutup)";
+        controller.Write(PIN_STEP_DIR, direction);
+        
+        Console.Write($"[ACTUATOR] Stepper Bergerak {dirText}: ");
+        
+        // Membangkitkan Pulse Train
+        for (int i = 0; i < steps; i++)
+        {
+            controller.Write(PIN_STEP_PUL, PinValue.High);
+            // Thread.Sleep(1); // Di-disable di Fiddle agar tidak terlalu lambat
+            controller.Write(PIN_STEP_PUL, PinValue.Low);
+            // Thread.Sleep(1);
+            Console.Write("."); // Visualisasi denyut pulsa
+        }
+        Console.WriteLine(" [SELESAI]");
+    }
+}
